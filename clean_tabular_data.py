@@ -9,9 +9,9 @@ df = pd.read_csv("data/Products.csv", lineterminator="\n")
 df_copy = df.copy()
 
 # Strip the pound sign, remove commas from price column and convert it into a float type.
-df_copy['price'] = df_copy['price'].str.strip('£')
-df_copy['price'] = df_copy['price'].str.replace(",", "")
-df_copy['price'] = df_copy['price'].astype('float64')
+df_copy['price'] = df_copy['price'] \
+    .apply(lambda x: x.replace('£', '').replace(',','')) \
+    .astype('float64')
 
 # Change the type of the 'category' column to be of type 'category'.
 df_copy['category'] = df_copy['category'].astype('category')
