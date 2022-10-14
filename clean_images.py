@@ -41,6 +41,7 @@ def check_images() -> None:
     dirs = os.listdir("data/cleaned_images")
     for item in dirs:
         im = Image.open("data/cleaned_images/" + item)
+        im_size = im.size
         im_arr = np.asarray(im)
         if im_arr.shape[2] != 3:
             print(item)
@@ -50,10 +51,13 @@ def check_images() -> None:
             print(item)
             print(im.mode)
             print("\n")
+        if im_size != (512,512):
+            print("Wrong size: ", im_size)
 
 if __name__ == '__main__':
     path = "data/cleaned_images"
     clean_image_data("data/images")
+    # check_images()
 
 
 
