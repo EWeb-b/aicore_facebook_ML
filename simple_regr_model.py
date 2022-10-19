@@ -3,14 +3,27 @@ import clean_tabular_data
 import numpy as np
 import pandas as pd
 
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
 
+
+# Set the data.
 df = clean_tabular_data.clean_tab_data()
 
-x_columns = ['product_name', 'product_description', 'location']
-X = df[x_columns]
+# Combine and set the features.
+X = pd.DataFrame()
+X['combined_features'] = df['product_name'] + df['product_description'] + df['location']
 
-target_column = 'price'
-y = df[target_column]
+# Set the target.
+y = df['price']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+tfidf_vectorizer = TfidfVectorizer()
+vec = tfidf_vectorizer.fit_transform(X['combined_features'])
+
+lr = LinearRegression()
+lr.fit(vec, y)
+
+error = mean_squared_error(y, lr.predict(vec))
+print(error)
