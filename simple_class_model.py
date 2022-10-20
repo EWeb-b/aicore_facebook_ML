@@ -13,6 +13,13 @@ class SimpleClassModel():
         self.df = data
 
     def get_numpy_representations(self):
+        """Converts the columns into numpy arrays and also reshapes the image arrays
+        so that they're compatible with the model.
+
+        Returns:
+            X: the numpy array of images, reshaped.
+            y, the numpy array of categories.
+        """
         X_stack = np.stack(self.df['img_arr'].values)
         X = X_stack.reshape(self.df.shape[0], 128*128*3)
 
@@ -21,6 +28,8 @@ class SimpleClassModel():
         return X, y
 
     def run_classification(self):
+        """Runs the classification and prints the accuracy report to the terminal.
+        """
         X, y = self.get_numpy_representations()
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
