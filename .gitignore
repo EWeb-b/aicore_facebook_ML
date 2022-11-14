@@ -1,6 +1,11 @@
 data
 data/
 /data/
+prototypes
+runs
+notebook.ipynb
+*.ipynb
+*.pt
 
 
 # Byte-compiled / optimized / DLL files
