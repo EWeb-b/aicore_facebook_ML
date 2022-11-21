@@ -51,3 +51,51 @@ It's worth noting that the model overfitting was not overlooked at this stage. K
 ![plot](readme_images/images_epoch_loss_train.png)
 ![plot](readme_images/images_epoch_acc_val.png)
 ![plot](readme_images/images_epoch_loss_val.png)
+
+# Creating the Text Model
+Now it was time to attempt to categorise the products from their textual descriptions alone.
+
+## Creating the Text Embeddings
+Neural networks cannot analyse pure text data. Much like with images, the data has to be first converted into a numerical format, and that format for text is a word embedding. A word embedding is a term used for the representation of words for text analysis, typically in the form of a real-valued vector that encodes the meaning of the word such that the words that are closer in the vector space are expected to be similar in meaning.
+
+- I decided to use BERT to create the text embeddings. https://huggingface.co/docs/transformers/model_doc/bert.
+- Creating embeddings is done in two stages. First, you tokenize the text, and then you feed these tokens into a pretrained model to create the actual embeddings.
+- I decided to tokenize the text within the `__getitem__` method of my TextDatabase. I did this because the tokens can be cast to tensors, and tensors can be loaded into memory by the GPU using the `.to(device)` command where device=cuda. This increases computation speed dramatically.
+- For a similar reason, I kept the second stage of creating embeddings, the model, out of my `__getitem__` method and added it to my TextClassifier model as an attribute instead. This meant that I could load the whole model, including the BERT model, with my GPU too, which was an even more significant speed improvement.
+
+Tokenizing the text in the TextDataset.
+![plot](readme_images/text_dataset_getitem.png)
+
+Applying the BERT model to the text tokens within the model.
+![plot](readme_images/text_classifier_forward.png)
+
+## Training the Model
+The training loop was almost exactly the same as the one used for the image classification. This time, however, I designed the neural network myself.
+
+- I designed the model with five 'units'.
+- The first four units consist of the same structure: a Convultional layer, Activation layer (ReLU), Max Pooling, and a Dropout layer.
+- Max Pooling helps by calculating an abstracted form of the feature map, by summarising the features extracted by the convolutional layer. This aids in preventing over-fitting and also keeps computation time down.
+- Dropout layers randomly set input units to 0 with a modifiable frequency, which helps prevent over-fitting.
+- The final unit consists of a Flatten layer, which processes the inputs into one dimension, ready to be classfied; followed by one more Dropout layer; and finally the Linear layer takes in the inputs and outputs 13 numbers: a prediction for each category.
+
+![plot](readme_images/text_classifier_model_struct.png)
+
+## Results
+By tweaking the number of epochs, batch size, learning rate, and the probability parameter of the Dropout layers, I attempted to achieve the best results possible.
+
+Firstly, I experimented with the learning rate.
+
+![plot](readme_images/text_lr_trainingacc.png)
+![plot](readme_images/text_lr_valacc.png)
+![plot](readme_images/text_lr_trainingloss.png)
+![plot](readme_images/text_baseloss_blue0.001_green0.0001_red0.01.png)
+
+- Learning rates: Red = 0.01, Blue = 0.001, Green = 0.0001.
+- We can see that a learning rate of 0.0001 gave us no overfitting while maintaining a good degree of accuracy.
+
+Then, the batch size.
+
+![plot](readme_images/text_batchsize.png)
+
+- Batch sizes: Grey = 32, Orange = 64, Blue = 128.
+- We can see that the differing batch sizes had little effect for the results of my model. As such, I decided to keep the batch size at 64.
