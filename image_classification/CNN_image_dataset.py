@@ -31,10 +31,13 @@ class CNNImageDataset(Dataset):
 
         self.transform = transform
         if transform is None:
-            self.transform = transforms.Compose(
+            transform = transforms.Compose(
                 [
-                    transforms.ToTensor(), # This also changes the pixels to be in range [0, 1] from [0, 255].
-                    transforms.RandomCrop((112,112)),
+                transforms.ToTensor(), # This also changes the pixels to be in range [0, 1] from [0, 255].
+                # transforms.RandomResizedCrop((64,64))
+                transforms.Resize((64,64)),
+                transforms.RandomHorizontalFlip(p=0.3),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
                 ]
             )
 
