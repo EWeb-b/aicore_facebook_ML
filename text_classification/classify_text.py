@@ -9,20 +9,24 @@ from text_classifier_model import TextClassifier
 from text_dataset import TextDataset
 
 device = ("cuda:0" if torch.cuda.is_available() else "cpu")
-num_epochs = 15        
+num_epochs = 25        
 batch_size=64
-lr = 0.001
+lr = 0.0001
+max_length = 200
 momentum=0.9
 shuffle = True
 num_workers=1
 pin_memory=True
 model = TextClassifier(num_classes = 13)
 model = model.to(device)
+# optimiser = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
 optimiser = torch.optim.Adam(model.main.parameters(), lr=lr)
 criterion = nn.CrossEntropyLoss()
 criterion = criterion.to(device)
 
-dataset = TextDataset(labels_level=0, max_length=100)
+# exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=7, gamma=0.9)
+
+dataset = TextDataset(labels_level=0, max_length=max_length)
 num_train_data = len(dataset) - round((len(dataset) * 0.25))
 num_val_data = len(dataset) - num_train_data
 train_set, validation_set = random_split(dataset,[num_train_data, num_val_data])
@@ -70,20 +74,19 @@ def train():
         val_run_corr = 0
         correct = 0.0
         # Eval loop
-        for features, labels in val_loader:
-            model.eval()
-            features = features.to(device)
-            labels = labels.to(device)
+        with torch.no_grad():
+            for features, labels in val_loader:
+                model.eval()
+                features = features.to(device)
+                labels = labels.to(device)
+                
+                outputs = model(features)
+                _, preds = torch.max(outputs, 1)
+                loss = criterion(outputs, labels)
 
-            optimiser.zero_grad()
-            torch.set_grad_enabled(False)
-            outputs = model(features)
-            _, preds = torch.max(outputs, 1)
-            loss = criterion(outputs, labels)
-
-            val_run_loss += loss.item() * features.size(0)
-            val_run_corr += torch.sum(preds == labels.data)
-            correct += (preds == labels).sum().item()
+                val_run_loss += loss.item() * features.size(0)
+                val_run_corr += torch.sum(preds == labels.data)
+                correct += (preds == labels).sum().item()
         
         val_epoch_loss = val_run_loss / num_val_data
         val_epoch_acc = (val_run_corr.double() / num_val_data) * 100
