@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-class CNNImageDataset(Dataset):
-    """ The CNNImageDataset inherits its methods from the
+class ImageDataset(Dataset):
+    """ The ImageDataset inherits its methods from the
     torch.utils.data.Dataset module.
     It loads all images with their labels from a pickle file
     created previously.

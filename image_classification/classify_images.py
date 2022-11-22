@@ -1,4 +1,4 @@
-from image_classification.CNN_image_dataset import CNNImageDataset
+from image_classification.image_dataset import ImageDataset
 from image_classification.image_transfer_CNN_model import ImageTransferCNN
 
 import copy
@@ -34,7 +34,7 @@ optimiser = torch.optim.Adam(model.parameters(), lr=lr)
 criterion = nn.CrossEntropyLoss()
 criterion = criterion.to(device)
 
-dataset = CNNImageDataset('data/cl_img_pickle_final.zip', transform=transform)
+dataset = ImageDataset('data/cl_img_pickle_final.zip', transform=transform)
 num_train_data = len(dataset) - round((len(dataset) * 0.25))
 num_val_data = len(dataset) - num_train_data
 train_set, validation_set = random_split(dataset,[num_train_data, num_val_data])
