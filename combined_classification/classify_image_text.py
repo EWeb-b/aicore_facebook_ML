@@ -1,35 +1,17 @@
 import copy
 import torch
-import torch.nn as nn
+
 
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split 
 
 from combined_classification.image_text_dataset import ImageTextDataset
-from text_classification.text_classifier_all import TextClassifier
-from image_classification.image_transfer_CNN_model import ImageTransferCNN
-
-class ImageTextClassifier(nn.Module):
-    def __init__(self, input_size: int = 768, num_classes:int = 13) -> None:
-        super().__init__()
-        # self.resnet50 = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_resnet50', pretrained=True)
-        # num_ftrs = self.resnet50.fc.in_features
-        # self.resnet50.fc = torch.nn.Linear(num_ftrs, 13)
-        self.image_classifier = ImageTransferCNN()
-        self.text_classifier = TextClassifier(input_size=input_size, num_classes=num_classes)
-        self.combiner = nn.Linear(26, num_classes)
-
-    def forward(self, image_features, text_features):
-        img_result = self.image_classifier(image_features)
-        text_result = self.text_classifier(text_features)
-        combined = torch.cat((img_result, text_result), 1)
-        combined_result = self.combiner(combined)
-        return combined_result
+from combined_classification.image_text_model import ImageTextClassifier
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 num_epochs = 15        
 batch_size=64
-lr = 0.001
+lr = 0.0001
 momentum=0.9
 shuffle = True
 num_workers=1
@@ -93,21 +75,19 @@ def train():
         val_run_corr = 0
         correct = 0.0
         # Eval loop
-        for images, text, labels in val_loader:
-            model.eval()
-            images = images.to(device)
-            text = text.to(device)
-            labels = labels.to(device)
+        with torch.no_grad():
+            for features, labels in val_loader:
+                model.eval()
+                features = features.to(device)
+                labels = labels.to(device)
+                
+                outputs = model(features)
+                _, preds = torch.max(outputs, 1)
+                loss = criterion(outputs, labels)
 
-            optimiser.zero_grad()
-            torch.set_grad_enabled(False)
-            outputs = model(images, text)
-            _, preds = torch.max(outputs, 1)
-            loss = criterion(outputs, labels)
-
-            val_run_loss += loss.item() * images.size(0)
-            val_run_corr += torch.sum(preds == labels.data)
-            correct += (preds == labels).sum().item()
+                val_run_loss += loss.item() * features.size(0)
+                val_run_corr += torch.sum(preds == labels.data)
+                correct += (preds == labels).sum().item()
         
         val_epoch_loss = val_run_loss / num_val_data
         val_epoch_acc = (val_run_corr.double() / num_val_data) * 100

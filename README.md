@@ -99,3 +99,18 @@ Then, the batch size.
 
 - Batch sizes: Grey = 32, Orange = 64, Blue = 128.
 - We can see that the differing batch sizes had little effect for the results of my model. As such, I decided to keep the batch size at 64.
+
+
+# Combining the Models
+Now that I had succesfully classified products using their image and text data separately, it was time to combine the models to achieve a higher degree of accuracy.
+
+## Creating the Image-Text Dataset
+- I wrote a static method to merge the image and text data.
+- By merging Products.csv and Images.csv using pandas, I could extract the products' image and text data by matching them together using their product id.
+- I combined the `__getitem__` method from the image and text datasets to return all of the needed data.
+
+## Creating the Model
+- Similarly to the dataset, I simply imported the text classifier and image classifier that I's already written, and combined them in their own classifier class.
+- By using a Liner layer, I combined the results of the text and image classifier to give the final prediction.
+
+![plot](readme_images/combined_model.png)
