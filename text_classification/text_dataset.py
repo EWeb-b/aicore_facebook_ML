@@ -4,8 +4,6 @@ import torch
 from transformers import BertTokenizer
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-# import sys
-# sys.path.append("..")
 from ..utilities import clean_tabular_data
 
 class TextDataset(Dataset):

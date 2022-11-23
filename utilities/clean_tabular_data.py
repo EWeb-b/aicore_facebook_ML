@@ -4,7 +4,7 @@ import numpy as np
 from pandas import DataFrame
 
 
-def clean_tab_data(filepath: str = 'data/Products.csv', labels_level: int = 0) -> DataFrame:
+def clean_tab_data(filepath: str = '/home/edwardwebb/Documents/aicore/aicore_facebook_ML/data/Products.csv', labels_level: int = 0) -> DataFrame:
     df = pd.read_csv(filepath, lineterminator="\n")
 
     # Create a copy to work on.
@@ -18,6 +18,8 @@ def clean_tab_data(filepath: str = 'data/Products.csv', labels_level: int = 0) -
     # Change the type of the 'category' column to be of type 'category'.
     df_copy['category'] = df_copy['category'].apply(lambda x: x.split("/")[labels_level].strip())
     df_copy['category'] = df_copy['category'].astype('category')
+
+    df.drop(['price'], axis=1, inplace=True)
 
     # Convert all the types of the columns to be best possible types.
     df_copy = df_copy.convert_dtypes(convert_integer=False, convert_floating=False)
