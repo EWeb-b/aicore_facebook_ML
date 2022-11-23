@@ -131,5 +131,5 @@ The combined model performed significantly better than the image and text models
 
 Below is a graph showing how the combined model (blue) performed against the text model (orange).
 
-![plot](readme_images/combinedtextcomparison.png)
+![plot](readme_images/combinedvstext.png)
 
