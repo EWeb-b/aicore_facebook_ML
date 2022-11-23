@@ -123,3 +123,13 @@ Now that I had succesfully classified products using their image and text data s
 - By using a Liner layer, I combined the results of the text and image classifier to give the final prediction.
 
 ![plot](readme_images/combined_model.png)
+
+## Results
+The combined model performed significantly better than the image and text models. Below is a graph showing how the combined model performed.
+
+![plot](readme_images/combined_model_base.png)
+
+Below is a graph showing how the combined model (blue) performed against the text model (orange).
+
+![plot](readme_images/combinedtextcomparison.png)
+
