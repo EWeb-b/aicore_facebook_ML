@@ -29,4 +29,4 @@ print(df.info())
 # Save the dataframe as a pickle file, ready for classification model.
 # df.to_pickle('data/cl_img_pickle.pkl')
 
-df.to_pickle('merged_data.zip', compression='zip', protocol=4)
+# df.to_pickle('merged_data.zip', compression='zip', protocol=4)
