@@ -1,17 +1,18 @@
 from transformers import BertTokenizer
-from transformers import BertModel
 import torch
 
+class TextProcessor:
+    def __init__(self, max_length: int = 50):
 
-def process_sentence(sentence: str, max_length: int):
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.max_length = max_length
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
+    def __call__(self, sentence):
+        encoded = self.tokenizer.batch_encode_plus([sentence],
+            max_length=self.max_length, padding='max_length', truncation=True)
+        inp = torch.tensor(encoded['input_ids'])
+        tok = torch.tensor(encoded['token_type_ids'])
+        att = torch.tensor(encoded['attention_mask'])
+        stack = torch.stack((inp, tok, att))
 
-    encoded = tokenizer.batch_encode_plus([sentence], max_length=max_length, padding='max_length', truncation=True)
-    encoded = {key:torch.LongTensor(value) for key, value in encoded.items()}
-
-    with torch.no_grad():
-        result = model(**encoded).last_hidden_state.swapaxes(1,2)
-
-    return result
+        return stack
