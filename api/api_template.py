@@ -153,8 +153,8 @@ except:
     raise OSError("No Image model found. Check that you have the encoder and the model in the correct location")
 
 try:
-    # TODO
     combined_classifier = CombinedModel(decoder = decoder)
+    combined_classifier.load_state_dict(torch.load('models/combined_model.pt'))
 except:
     raise OSError("No Combined model found. Check that you have the encoder and the model in the correct location")
 
