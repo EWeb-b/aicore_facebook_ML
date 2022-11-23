@@ -69,6 +69,12 @@ Tokenizing the text in the TextDataset.
 Applying the BERT model to the text tokens within the model.
 ![plot](readme_images/text_classifier_forward.png)
 
+At first, I was only including the products' descriptions when creating text embeddings. However, I realised that including the products' names would improve the model accuracy, since if a product is named something like 'Office Chair', the model will (hopefully) make the connection to the 'Office Furniture & Equipment' category.
+As such, I combined the `product_name` and `product_description` columns of the dataset and creating the word embeddings from that combined column. I made sure to have the product's name at the front of this concatenation, in case the length of the text is truncated by the Bert Tokenizer.
+Below is a comparison of training a model using the dataset with only product descriptions for word embeddings (grey), and a model trained on word embeddings created form the combined columns (orange).
+
+![plot](readme_images/combinedtextcomparison.png)
+
 ## Training the Model
 The training loop was almost exactly the same as the one used for the image classification. This time, however, I designed the neural network myself.
 
@@ -100,6 +106,9 @@ Then, the batch size.
 - Batch sizes: Grey = 32, Orange = 64, Blue = 128.
 - We can see that the differing batch sizes had little effect for the results of my model. As such, I decided to keep the batch size at 64.
 
+After tweaking the hyperparameters and model structure, I arrived at a model with an accuracy on the validation data of 75%.
+
+![plot](readme_images/text_final_model.png)
 
 # Combining the Models
 Now that I had succesfully classified products using their image and text data separately, it was time to combine the models to achieve a higher degree of accuracy.

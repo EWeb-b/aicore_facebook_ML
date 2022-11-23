@@ -6,6 +6,8 @@ runs
 notebook.ipynb
 *.ipynb
 *.pt
+models
+decoder.py
 
 
 # Byte-compiled / optimized / DLL files
