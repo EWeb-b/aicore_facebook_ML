@@ -29,7 +29,7 @@ class TextClassifier(nn.Module):
                                   nn.Linear(384 , 13))
 
     def forward(self, input):
-        descriptions = []
+        embeddings = []
         self.bert.eval()
         for stack in input:
             split = torch.unbind(stack)
@@ -39,11 +39,11 @@ class TextClassifier(nn.Module):
             encoded['attention_mask'] = split[2]
 
             with torch.no_grad():
-                description = self.bert(**encoded).last_hidden_state.swapaxes(1,2)
-            description = description.squeeze(0) # removes the leading dimension of '1' in .size
-            descriptions.append(description)
+                embedding = self.bert(**encoded).last_hidden_state.swapaxes(1,2)
+            embedding = embedding.squeeze(0) # removes the leading dimension of '1' in .size
+            embeddings.append(embedding)
 
-        desc_stack = torch.stack(descriptions)
+        desc_stack = torch.stack(embeddings)
         result = self.main(desc_stack)
         return result
 
