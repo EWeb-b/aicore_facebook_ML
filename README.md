@@ -133,3 +133,33 @@ Below is a graph showing how the combined model (blue) performed against the tex
 
 ![plot](readme_images/combinedvstext.png)
 
+
+# Creating the API
+I used FastAPI to make my image, text, and combined models available via API. Making a model available in this way is called 'model serving'.
+
+## Creating the API
+- All of the API endpoints were written in a single file, `api.py`.
+- I started by rewriting my text, image, and combined models' strcutures in my api file so that they could be initialised.
+- I added three additional methods to each of the models: `predict`, `predict_proba`, and `predict_classes`.
+
+- The `predict` method simply runs the input through the model's `forward` method.
+- The `predict_proba` method returns `torch.softmax` of the initial prediction.
+- The `predict_classes` method firstly uses `torch.argmax` to find the most likely (largest) prediction's index made by `predict`, then uses the decoder.pkl file to return the actual (predicted) category of the product.
+
+![plot](readme_images/api_models_methods.png)
+
+## Results
+Using a test file, I made requests to the API's endpoints to obtain results.
+
+Firstly, the text endpoint:
+![plot](readme_images/api_text_output.png)
+
+Image endpoint:
+![plot](readme_images/api_image_output.png)
+
+Combined model endpoint:
+![plot](readme_images/api_combined_output.png)
+
+It's worth noting that I used short sentences when testing each endpoint coupled with a random image, hence the vastly different results from each endpoint.
+
+
