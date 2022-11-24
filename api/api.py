@@ -16,7 +16,7 @@ from transformers import BertModel
 import numpy as np
 
 class TextClassifier(nn.Module):
-    def __init__(self, input_size: int = 768, num_classes: int = 13, decoder) -> None:
+    def __init__(self, decoder, input_size: int = 768, num_classes: int = 13) -> None:
         super().__init__()
         self.decoder = decoder
         self.bert = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
@@ -43,22 +43,17 @@ class TextClassifier(nn.Module):
                                   nn.Linear(384 , num_classes))
         
     def forward(self, input):
-        descriptions = []
         self.bert.eval()
-        for stack in input:
-            split = torch.unbind(stack)
-            encoded = {}
-            encoded['input_ids'] = split[0]
-            encoded['token_type_ids'] = split[1]
-            encoded['attention_mask'] = split[2]
+        split = torch.unbind(input)
+        encoded = {}
+        encoded['input_ids'] = split[0]
+        encoded['token_type_ids'] = split[1]
+        encoded['attention_mask'] = split[2]
 
-            with torch.no_grad():
-                description = self.bert(**encoded).last_hidden_state.swapaxes(1,2)
-            description = description.squeeze(0) # removes the leading dimension of '1' in .size
-            descriptions.append(description)
+        with torch.no_grad():
+            embedding = self.bert(**encoded).last_hidden_state.swapaxes(1,2)
 
-        desc_stack = torch.stack(descriptions)
-        result = self.main(desc_stack)
+        result = self.main(embedding)
         return result
 
     def predict(self, text):
@@ -66,18 +61,17 @@ class TextClassifier(nn.Module):
             prediction = self.forward(text)
             return prediction
     
-    def predict_proba(self, text):
+    def predict_proba(self, pred):
         with torch.no_grad():
-            probability = torch.softmax(self.forward(text), 1)
+            probability = torch.softmax(pred, 1)
             return probability
 
-    def predict_classes(self, text):
+    def predict_classes(self, pred):
         with torch.no_grad():
-            res = self.forward(text)
-            return self.decoder[int(torch.argmax(res, 1))]
+            return self.decoder[int(torch.argmax(pred, 1))]
 
 class ImageClassifier(torch.nn.Module):
-    def __init__(self, num_classes:int = 13, decoder) -> None:
+    def __init__(self, decoder, num_classes:int = 13) -> None:
         super().__init__()
         self.decoder = decoder
         self.resnet50 = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_resnet50', pretrained=True)
@@ -92,22 +86,20 @@ class ImageClassifier(torch.nn.Module):
             x = self.forward(image)
             return x
 
-    def predict_proba(self, image):
+    def predict_proba(self, pred):
         with torch.no_grad():
-            x = self.forward(image)
-            return torch.softmax(x, 1)
+            return torch.softmax(pred, 1)
 
-    def predict_classes(self, image):
+    def predict_classes(self, pred):
         with torch.no_grad():
-            x = self.forward(image)
-            return self.decoder[int(torch.argmax(x, 1))]
+            return self.decoder[int(torch.argmax(pred, 1))]
 
 class CombinedModel(nn.Module):
-    def __init__(self, input_size: int = 768, num_classes:int = 13, decoder) -> None:
+    def __init__(self, decoder, input_size: int = 768, num_classes:int = 13) -> None:
         super().__init__()
         self.decoder = decoder
-        self.image_classifier = ImageClassifier()
-        self.text_classifier = TextClassifier(input_size=input_size, num_classes=num_classes)
+        self.image_classifier = ImageClassifier(decoder=decoder)
+        self.text_classifier = TextClassifier(decoder=decoder, input_size=input_size, num_classes=num_classes)
         self.combiner = nn.Linear(26, num_classes)
 
     def forward(self, image_features, text_features):
@@ -122,39 +114,42 @@ class CombinedModel(nn.Module):
             combined_features = self.forward(image_features, text_features)
             return combined_features
     
-    def predict_proba(self, image_features, text_features):
+    def predict_proba(self, pred):
         with torch.no_grad():
-            x = self.forward(image_features, text_features)
-            return torch.softmax(x, 1)
+            return torch.softmax(pred, 1)
 
-    def predict_classes(self, image_features, text_features):
+    def predict_classes(self, pred):
         with torch.no_grad():
-            x = self.forward(image_features, text_features)
-            return self.decoder[int(torch.argmax(x, 1))]
+            return self.decoder[int(torch.argmax(pred, 1))]
 
 
 # Don't change this, it will be useful for one of the methods in the API
 class TextItem(BaseModel):
     text: str
 
-with open('aicore_facebook_ML/decoder.pkl', 'rb') as f:
+device = ("cuda" if torch.cuda.is_available() else "cpu")
+
+with open('decoder.pkl', 'rb') as f:
     decoder = pickle.load(f)
 
 try:
     text_classifier = TextClassifier(decoder=decoder)
-    text_classifier.load_state_dict(torch.load('models/text_model.pt'), strict=False)
+    text_classifier.load_state_dict(torch.load('text_model.pt', map_location=device), strict=False)
+    text_classifier.eval()
 except:
     raise OSError("No Text model found. Check that you have the decoder and the model in the correct location")
 
 try:
-    image_classifier = ImageClassifier(decoder = decoder)
-    image_classifier.load_state_dict(torch.load('models/image_model.pt'), strict=False)
+    image_classifier = ImageClassifier(decoder=decoder)
+    image_classifier.load_state_dict(torch.load('image_model.pt', map_location=device), strict=False)
+    image_classifier.eval()
 except:
     raise OSError("No Image model found. Check that you have the encoder and the model in the correct location")
 
 try:
-    combined_classifier = CombinedModel(decoder = decoder)
-    combined_classifier.load_state_dict(torch.load('models/combined_model.pt'))
+    combined_classifier = CombinedModel(decoder=decoder)
+    combined_classifier.load_state_dict(torch.load('combined_model.pt', map_location=device), strict=False)
+    combined_classifier.eval()
 except:
     raise OSError("No Combined model found. Check that you have the encoder and the model in the correct location")
 
@@ -179,37 +174,37 @@ def healthcheck():
 
 @app.post('/predict/text')
 def predict_text(text: TextItem):
-  
-    processed_text = text_processor(text)
+    print(text.text)
+    processed_text = text_processor(text.text)
+
     pred = text_classifier.predict(processed_text)
-    prob = text_classifier.predict_proba(processed_text)
-    classes = text_classifier.predict_classes(processed_text)
-    print(pred)
-    print(prob)
-    print(classes)
+    prob = text_classifier.predict_proba(pred)
+    classes = text_classifier.predict_classes(pred)
+
+    print(pred, prob, classes)
 
     return JSONResponse(content={
-        "pred": pred,
-        "prob": prob,
+        "pred": pred.tolist(),
+        "prob": prob.tolist(),
         "classes": classes
             })
-  
+
 @app.post('/predict/image')
 def predict_image(image: UploadFile = File(...)):
     pil_image = Image.open(image.file)
-    img_arr = np.array(pil_image)
 
-    processed_image = image_processor(img_arr)
+    processed_image = image_processor(pil_image)
     pred = image_classifier.predict(processed_image)
-    prob = image_classifier.predict_proba(processed_image)
-    classes = image_classifier.predict_classes(processed_image)
+    prob = image_classifier.predict_proba(pred)
+    classes = image_classifier.predict_classes(pred)
+
     print(pred)
     print(prob)
     print(classes)
 
     return JSONResponse(content={
-        "pred": pred,
-        "prob": prob,
+        "pred": pred.tolist(),
+        "prob": prob.tolist(),
         "classes": classes
             })
   
@@ -217,20 +212,19 @@ def predict_image(image: UploadFile = File(...)):
 def predict_combined(image: UploadFile = File(...), text: str = Form(...)):
     print(text)
     pil_image = Image.open(image.file)
-    img_arr = np.array(pil_image)
-    processed_image = image_processor(img_arr)
+    processed_image = image_processor(pil_image)
     processed_text = text_processor(text)
     
     pred = combined_classifier.predict(processed_image, processed_text)
-    prob = combined_classifier.predict_proba(processed_image, processed_text)
-    classes = combined_classifier.predict_classes(processed_image, processed_text)
+    prob = combined_classifier.predict_proba(pred)
+    classes = combined_classifier.predict_classes(pred)
     print(pred)
     print(prob)
     print(classes)
 
     return JSONResponse(content={
-        "pred": pred,
-        "prob": prob,
+        "pred": pred.tolist(),
+        "prob": prob.tolist(),
         "classes": classes
             })
     

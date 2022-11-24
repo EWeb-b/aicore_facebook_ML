@@ -7,6 +7,6 @@ services:
       restart: always
       environment:
         - BUCKET_NAME=${BUCKET_NAME}
-      network_mode: host
+      #network_mode: host
       volumes: 
         - ~/app:/app
