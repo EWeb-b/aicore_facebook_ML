@@ -38,7 +38,7 @@ layout = {
         "accuracy": ["Multiline", ["accuracy/training", "accuracy/validation"]],
     },
 }
-writer = SummaryWriter(f"drive/MyDrive/runs/imagetext_lr={lr}, batch_size={batch_size}, num_epochs={num_epochs}, max_length={max_length}")
+writer = SummaryWriter(f"runs/imagetext_lr={lr}, batch_size={batch_size}, num_epochs={num_epochs}, max_length={max_length}")
 writer.add_custom_scalars(layout)
 
 
